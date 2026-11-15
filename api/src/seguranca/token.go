@@ -3,12 +3,24 @@ package seguranca
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var secretkey = []byte("Chave super secreta")
+var secretkey = carregarSegredo()
+
+// lê a chave de assinatura da variável de ambiente JWT_SECRET; sem ela, usa uma chave fixa só para desenvolvimento
+func carregarSegredo() []byte {
+	if segredo := os.Getenv("JWT_SECRET"); segredo != "" {
+		return []byte(segredo)
+	}
+
+	log.Println("AVISO: JWT_SECRET nao definido, usando a chave de desenvolvimento. Defina JWT_SECRET em producao.")
+	return []byte("Chave super secreta")
+}
 
 // dados embutidos dentro do token
 type customClaims struct {
