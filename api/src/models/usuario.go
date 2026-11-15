@@ -2,9 +2,11 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"seveste-api/src/seguranca"
 	"slices"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -51,7 +53,7 @@ func (u *Usuario) Preparar(etapa string) error {
 // considera " " como preenchido
 func (u *Usuario) formatar(etapa string) error {
 	u.Nome = strings.TrimSpace(u.Nome)
-	u.Email = strings.TrimSpace(u.Email)
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 	u.Senha = strings.TrimSpace(u.Senha)
 	u.Telefone = strings.TrimSpace(u.Telefone)
 	u.UF = strings.TrimSpace(u.UF)
@@ -112,6 +114,28 @@ func (u *Usuario) validar(etapa string) error {
 		u.RoupasProcuradas = roupasSemVazias
 	}
 
+	return u.validarTamanhos()
+}
+
+// respeita o tamanho das colunas da tabela users (e cities / recipient_profiles) para o banco nunca recusar o dado
+func (u *Usuario) validarTamanhos() error {
+	limites := []struct {
+		nome  string
+		valor string
+		max   int
+	}{
+		{"nome", u.Nome, 100},
+		{"email", u.Email, 150},
+		{"telefone", u.Telefone, 20},
+		{"cidade", u.Cidade, 200},
+		{"tamanho_roupa", u.TamanhoRoupa, 10},
+	}
+	for _, l := range limites {
+		if utf8.RuneCountInString(l.valor) > l.max {
+			return fmt.Errorf("o campo '%s' deve ter no maximo %d caracteres", l.nome, l.max)
+		}
+	}
+
 	return nil
 }
 
@@ -155,5 +179,25 @@ func (u *Usuario) Mesclar(dados AtualizacaoUsuario) error {
 		return errors.New("nenhum dado fornecido para atualizacao")
 	}
 
-	return nil
+	return u.validarTamanhos()
+}
+
+// SemSenha devolve uma cópia do usuário sem o hash da senha, para uso em qualquer resposta da API
+func (u Usuario) SemSenha() Usuario {
+	u.Senha = ""
+
+	return u
+}
+
+// UsuarioPublico é o que qualquer pessoa pode ver de um usuário: nada de contato, senha ou preferências pessoais
+type UsuarioPublico struct {
+	ID     uint64 `json:"id_usuario"`
+	Nome   string `json:"nome"`
+	Tipo   string `json:"tipo"`
+	UF     string `json:"uf"`
+	Cidade string `json:"cidade"`
+}
+
+func (u Usuario) Publico() UsuarioPublico {
+	return UsuarioPublico{ID: u.ID, Nome: u.Nome, Tipo: u.Tipo, UF: u.UF, Cidade: u.Cidade}
 }

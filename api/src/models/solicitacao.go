@@ -2,9 +2,16 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
+)
+
+const (
+	SolicitacaoPendente = "PENDENTE"
+	SolicitacaoAceita   = "ACEITA"
+	SolicitacaoRecusada = "RECUSADA"
 )
 
 type Solicitacao struct {
@@ -38,10 +45,30 @@ func (s *Solicitacao) validar() error {
 		return errors.New("o id_usuario e obrigatorio e deve ser valido")
 	}
 
-	statusPermitidos := []string{"PENDENTE", "ACEITA", "RECUSADA"}
+	statusPermitidos := []string{SolicitacaoPendente, SolicitacaoAceita, SolicitacaoRecusada}
 	if !slices.Contains(statusPermitidos, s.Status) {
-		return errors.New(`status invalido para a solicitadao, permitidos: ["PENDENTE", "ACEITA", "RECUSADA"]`)
+		return errors.New(`status invalido para a solicitacao, permitidos: ["PENDENTE", "ACEITA", "RECUSADA"]`)
 	}
 
 	return nil
+}
+
+// Responder é a decisão do doador: só uma solicitação PENDENTE pode virar ACEITA ou RECUSADA
+func (s *Solicitacao) Responder(novoStatus string) error {
+	if novoStatus != SolicitacaoAceita && novoStatus != SolicitacaoRecusada {
+		return errors.New("a resposta deve ser ACEITA ou RECUSADA")
+	}
+
+	if s.Status != SolicitacaoPendente {
+		return fmt.Errorf("somente solicitacoes pendentes podem ser respondidas (status atual: %s)", s.Status)
+	}
+
+	s.Status = novoStatus
+
+	return nil
+}
+
+// uma solicitação ativa ainda "ocupa" a doação para aquele usuário (impede pedir duas vezes)
+func (s *Solicitacao) EstaAtiva() bool {
+	return s.Status == SolicitacaoPendente || s.Status == SolicitacaoAceita
 }

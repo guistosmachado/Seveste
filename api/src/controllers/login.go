@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"seveste-api/src/repositories/repo_usuario"
 	"seveste-api/src/seguranca"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +22,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	var usuario, err = repo_usuario.UsuarioRepo.BuscarPorEmail(credenciais.Email)
+	var usuario, err = repo_usuario.UsuarioRepo.BuscarPorEmail(strings.ToLower(strings.TrimSpace(credenciais.Email)))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"erro": "credenciais invalidas"})
 		return
