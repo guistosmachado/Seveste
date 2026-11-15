@@ -6,9 +6,15 @@ import (
 	"seveste-api/src/database"
 	"seveste-api/src/repositories"
 	"seveste-api/src/router"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load("./.env"); err != nil {
+		log.Println("arquivo .env não encontrado usando apenas varíaveis de ambiente")
+	}
+
 	// Com DATABASE_URL a API usa o PostgreSQL; sem ela, usa repositórios em memória com dados de exemplo.
 	if url := os.Getenv("DATABASE_URL"); url != "" {
 		db, err := database.Conectar(url)
