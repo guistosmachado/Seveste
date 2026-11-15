@@ -3,12 +3,23 @@ package seguranca
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var secretkey = []byte("Chave super secreta")
+// lê a chave de assinatura da variável de ambiente JWT_SECRET; sem ela, usa uma chave fixa só para desenvolvimento
+var chaveSecreta = sync.OnceValue(func() []byte {
+	if segredo := os.Getenv("JWT_SECRET"); segredo != "" {
+		return []byte(segredo)
+	}
+
+	log.Println("AVISO: JWT_SECRET nao definido, usando a chave de desenvolvimento. Defina JWT_SECRET em producao.")
+	return []byte("chave secreta")
+})
 
 // dados embutidos dentro do token
 type customClaims struct {
@@ -31,7 +42,7 @@ func GerarToken(usuarioID uint64, tipo string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretkey)
+	return token.SignedString(chaveSecreta)
 }
 
 // decodifica o token e verifica a assinatura e a expiração
@@ -41,7 +52,7 @@ func ValidarToken(tokenString string) (*customClaims, error) {
 			return nil, fmt.Errorf("algoritmo de token inesperado: %v", token.Header["alg"])
 		}
 
-		return secretkey, nil
+		return chaveSecreta, nil
 	})
 
 	if err != nil {

@@ -1,9 +1,12 @@
 package repo_doacao
 
 import (
+	"cmp"
 	"errors"
 	"seveste-api/src/models"
+	"slices"
 	"sync"
+	"time"
 )
 
 type RepositorioDeMemoriaDoacao struct {
@@ -19,11 +22,22 @@ func NovoRepositorioDeDoacao() *RepositorioDeMemoriaDoacao {
 	}
 }
 
+func ordenarPorID(doacoes []models.Doacao) {
+	slices.SortFunc(doacoes, func(a, b models.Doacao) int {
+		return cmp.Compare(a.ID, b.ID)
+	})
+}
+
 func (r *RepositorioDeMemoriaDoacao) Criar(d *models.Doacao) (*models.Doacao, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	agora := time.Now()
 	d.ID = r.proxID
+	if d.CriadoEm.IsZero() {
+		d.CriadoEm = agora
+	}
+	d.AtualizadoEm = agora
 	r.doacoes[r.proxID] = *d
 	r.proxID++
 
@@ -38,6 +52,7 @@ func (r *RepositorioDeMemoriaDoacao) BuscarTodas() ([]models.Doacao, error) {
 	for _, d := range r.doacoes {
 		doacoes = append(doacoes, d)
 	}
+	ordenarPorID(doacoes)
 
 	return doacoes, nil
 }
@@ -54,6 +69,21 @@ func (r *RepositorioDeMemoriaDoacao) BuscarPorID(ID uint64) (*models.Doacao, err
 	return &d, nil
 }
 
+func (r *RepositorioDeMemoriaDoacao) BuscarPorUsuarioID(usuarioID uint64) ([]models.Doacao, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	filtradas := make([]models.Doacao, 0)
+	for _, d := range r.doacoes {
+		if d.UsuarioID == usuarioID {
+			filtradas = append(filtradas, d)
+		}
+	}
+	ordenarPorID(filtradas)
+
+	return filtradas, nil
+}
+
 func (r *RepositorioDeMemoriaDoacao) Salvar(ID uint64, nova *models.Doacao) (*models.Doacao, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -62,6 +92,7 @@ func (r *RepositorioDeMemoriaDoacao) Salvar(ID uint64, nova *models.Doacao) (*mo
 	if !existe {
 		return nil, errors.New("doação não encontrada")
 	}
+	nova.AtualizadoEm = time.Now()
 	r.doacoes[ID] = *nova
 
 	return nova, nil

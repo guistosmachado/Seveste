@@ -1,8 +1,10 @@
 package repo_usuario
 
 import (
+	"cmp"
 	"errors"
 	"seveste-api/src/models"
+	"slices"
 	"sync"
 )
 
@@ -38,6 +40,10 @@ func (r *RepositorioDeMemoriaUsuario) BuscarTodos() ([]models.Usuario, error) {
 	for _, usuario := range r.usuarios {
 		lista = append(lista, usuario)
 	}
+
+	slices.SortFunc(lista, func(a, b models.Usuario) int {
+		return cmp.Compare(a.ID, b.ID)
+	})
 
 	return lista, nil
 }

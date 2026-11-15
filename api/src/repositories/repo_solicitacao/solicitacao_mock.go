@@ -1,8 +1,10 @@
 package repo_solicitacao
 
 import (
+	"cmp"
 	"errors"
 	"seveste-api/src/models"
+	"slices"
 	"sync"
 )
 
@@ -46,12 +48,16 @@ func (r *RepositorioDeMemoriaSolicitacao) BuscarPorDoacaoID(doacaoID uint64) ([]
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var filtrados []models.Solicitacao
+	filtrados := make([]models.Solicitacao, 0)
 	for _, s := range r.solicitacoes {
 		if s.DoacaoID == doacaoID {
 			filtrados = append(filtrados, s)
 		}
 	}
+
+	slices.SortFunc(filtrados, func(a, b models.Solicitacao) int {
+		return cmp.Compare(a.ID, b.ID)
+	})
 
 	return filtrados, nil
 }
@@ -60,12 +66,16 @@ func (r *RepositorioDeMemoriaSolicitacao) BuscarPorUsuarioID(usuarioID uint64) (
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var filtrados []models.Solicitacao
+	filtrados := make([]models.Solicitacao, 0)
 	for _, s := range r.solicitacoes {
 		if s.UsuarioID == usuarioID {
 			filtrados = append(filtrados, s)
 		}
 	}
+
+	slices.SortFunc(filtrados, func(a, b models.Solicitacao) int {
+		return cmp.Compare(a.ID, b.ID)
+	})
 
 	return filtrados, nil
 }
