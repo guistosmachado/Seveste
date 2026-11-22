@@ -43,6 +43,9 @@ CREATE TABLE users (
   state CHAR(2) NOT NULL,
   city_id INT NOT NULL,
   user_type_id INT NOT NULL,
+  -- LGPD: quando o usuario aceitou os Termos de Uso e a Politica de Privacidade, e qual versao deles
+  terms_accepted_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  terms_version VARCHAR(20) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

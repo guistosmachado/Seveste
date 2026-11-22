@@ -42,7 +42,7 @@ func GerarToken(usuarioID uint64, tipo string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(chaveSecreta)
+	return token.SignedString(chaveSecreta())
 }
 
 // decodifica o token e verifica a assinatura e a expiração
@@ -52,7 +52,7 @@ func ValidarToken(tokenString string) (*customClaims, error) {
 			return nil, fmt.Errorf("algoritmo de token inesperado: %v", token.Header["alg"])
 		}
 
-		return chaveSecreta, nil
+		return chaveSecreta(), nil
 	})
 
 	if err != nil {

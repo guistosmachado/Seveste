@@ -17,6 +17,8 @@
 /.next/
 /out/
 /types
+AGENTS.md
+CLAUDE.md
 
 # production
 /build

@@ -2,23 +2,39 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Menu } from "lucide-react"
-import { useEffect, useState } from "react"
+import { LogOut, Menu } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "./AuthProvider"
+
+const solidButton = "cursor-pointer border border-seveste-surface bg-seveste-surface px-5 py-2.5 font-sans text-lg font-semibold text-seveste-dark shadow-sm transition duration-200 hover:-translate-y-px hover:border-seveste-accent hover:bg-seveste-accent hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-accent"
+const outlineButton = "cursor-pointer border border-seveste-surface/70 bg-transparent px-5 py-2.5 font-sans text-lg font-semibold text-seveste-white transition duration-200 hover:-translate-y-px hover:border-seveste-accent hover:bg-seveste-accent/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-accent"
+const mobileLink = "px-4 py-3 text-left font-sans font-semibold text-seveste-white hover:bg-seveste-green"
 
 export default function Navbar() {
-    const [isVisible, setIsVisible] = useState(false)
+    const { usuario, carregando, sair } = useAuth()
+    const router = useRouter()
 
-    useEffect(() => {
-        const handleScroll = () => setIsVisible(window.scrollY > 24)
+    const handleLogout = () => {
+        sair()
+        router.push("/")
+    }
 
-        handleScroll()
-        window.addEventListener("scroll", handleScroll)
-
-        return () => window.removeEventListener("scroll", handleScroll)
-    }, [])
+    // logado: navegação da conta; deslogado: os botões de cadastro originais + entrar
+    const links = usuario
+        ? [
+            { href: "/products", label: "Vitrine", principal: false },
+            ...(usuario.tipo === "doador" ? [{ href: "/announce", label: "Anunciar", principal: false }] : []),
+            { href: "/dashboard", label: "Minha conta", principal: true },
+        ]
+        : [
+            { href: "/join?role=donor", label: "Quero doar", principal: true },
+            { href: "/join?role=recipient", label: "Quero receber", principal: false },
+        ]
 
     return (
-        <nav className={`fixed inset-x-0 top-0 z-20 flex items-center justify-between bg-seveste-dark px-4 py-3 shadow-lg transition-transform duration-300 md:px-15 ${isVisible ? "translate-y-0" : "-translate-y-full"}`}>
+        <>
+        {/* a navbar fica sempre fixa no topo; o espaçador abaixo ocupa a mesma altura para ela não cobrir o conteúdo */}
+        <nav className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-seveste-dark px-4 py-3 shadow-lg md:px-15">
             <details className="relative md:hidden">
                 <summary
                     className="flex size-11 cursor-pointer list-none items-center justify-center text-seveste-white [&::-webkit-details-marker]:hidden"
@@ -28,18 +44,19 @@ export default function Navbar() {
                 </summary>
 
                 <div className="absolute left-0 top-full mt-3 flex w-52 flex-col border border-seveste-sage bg-seveste-dark p-2 shadow-lg">
-                    <Link
-                        href="/join?role=donor"
-                        className="px-4 py-3 font-sans font-semibold text-seveste-white hover:bg-seveste-green"
-                    >
-                        Quero doar
-                    </Link>
-                    <Link
-                        href="/join?role=recipient"
-                        className="px-4 py-3 font-sans font-semibold text-seveste-white hover:bg-seveste-green"
-                    >
-                        Quero receber
-                    </Link>
+                    {!carregando && links.map(({ href, label }) => (
+                        <Link key={href} href={href} className={mobileLink}>
+                            {label}
+                        </Link>
+                    ))}
+                    {!carregando && !usuario && (
+                        <Link href="/login" className={mobileLink}>Entrar</Link>
+                    )}
+                    {usuario && (
+                        <button type="button" onClick={handleLogout} className={`${mobileLink} cursor-pointer`}>
+                            Sair
+                        </button>
+                    )}
                 </div>
             </details>
 
@@ -59,22 +76,34 @@ export default function Navbar() {
             </Link>
 
             <div className="hidden items-center gap-3 md:flex">
-                <Link
-                    href="/join?role=donor"
-                    className="cursor-pointer border border-seveste-surface bg-seveste-surface px-5 py-2.5 font-sans text-lg font-semibold text-seveste-dark shadow-sm transition duration-200 hover:-translate-y-px hover:border-seveste-accent hover:bg-seveste-accent hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-accent"
-                >
-                    Quero doar
-                </Link>
+                {!carregando && !usuario && (
+                    <Link href="/login" className="px-3 py-2.5 font-sans text-lg font-semibold text-seveste-white transition hover:text-seveste-accent">
+                        Entrar
+                    </Link>
+                )}
 
-                <Link
-                    href="/join?role=recipient"
-                    className="cursor-pointer border border-seveste-surface/70 bg-transparent px-5 py-2.5 font-sans text-lg font-semibold text-seveste-white transition duration-200 hover:-translate-y-px hover:border-seveste-accent hover:bg-seveste-accent/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-accent"
-                >
-                    Quero receber
-                </Link>
+                {!carregando && links.map(({ href, label, principal }) => (
+                    <Link key={href} href={href} className={principal ? solidButton : outlineButton}>
+                        {label}
+                    </Link>
+                ))}
+
+                {usuario && (
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex size-11 cursor-pointer items-center justify-center text-seveste-white transition hover:text-seveste-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-accent"
+                        aria-label="Sair da conta"
+                        title="Sair"
+                    >
+                        <LogOut size={22} />
+                    </button>
+                )}
             </div>
 
             <div className="size-11 md:hidden" aria-hidden="true" />
         </nav>
+        <div className="h-17 md:h-20" aria-hidden="true" />
+        </>
     )
 }

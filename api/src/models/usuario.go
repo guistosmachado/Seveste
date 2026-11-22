@@ -6,6 +6,7 @@ import (
 	"seveste-api/src/seguranca"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -13,6 +14,9 @@ const (
 	TipoDoador   string = "doador"
 	TipoAcolhido string = "acolhido"
 )
+
+// versão atual dos Termos de Uso e da Política de Privacidade (atualizar junto com as páginas /terms-of-use e /privacy-policy do front)
+const VersaoTermosAtual string = "2026-11"
 
 type Usuario struct {
 	ID       uint64 `json:"id_usuario"`
@@ -27,6 +31,12 @@ type Usuario struct {
 	RoupasProcuradas []string `json:"roupas_procuradas"`
 	TamanhoRoupa     string   `json:"tamanho_roupa"`
 	TamanhoCalcado   uint8    `json:"tamanho_calcado"`
+
+	// LGPD: o cadastro só é aceito com o aceite dos Termos de Uso e da Política de Privacidade.
+	// AceiteTermos vem do formulário de cadastro; a data e a versão aceitas ficam gravadas no banco.
+	AceiteTermos   bool      `json:"aceite_termos,omitempty"`
+	AceiteTermosEm time.Time `json:"aceite_termos_em"`
+	VersaoTermos   string    `json:"versao_termos"`
 }
 
 type AtualizacaoUsuario struct {
@@ -90,6 +100,16 @@ func (u *Usuario) validar(etapa string) error {
 
 	if etapa == "cadastro" && u.Senha == "" {
 		return errors.New("a senha e obrigatoria e deve ser preenchida")
+	}
+
+	if etapa == "cadastro" {
+		if !u.AceiteTermos {
+			return errors.New("e necessario aceitar os termos de uso e a politica de privacidade")
+		}
+
+		// registra o momento do aceite e a versão aceita (o que vier do cliente nesses campos é ignorado)
+		u.AceiteTermosEm = time.Now()
+		u.VersaoTermos = VersaoTermosAtual
 	}
 
 	if u.Tipo != TipoDoador && u.Tipo != TipoAcolhido {

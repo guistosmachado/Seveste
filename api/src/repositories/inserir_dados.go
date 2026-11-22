@@ -149,6 +149,9 @@ func InserirDadosSeVazio() {
 func InserirDados() {
 	idsUsuarios := make([]uint64, 0, len(usuarios))
 	for _, usuario := range usuarios {
+		// as contas de exemplo também registram o aceite dos termos (obrigatório no cadastro)
+		usuario.AceiteTermos = true
+
 		err := usuario.Preparar("cadastro")
 		if err != nil {
 			log.Fatal(err)
