@@ -23,7 +23,8 @@ var errUsuarioNaoEncontrado = errors.New("usuario nao encontrado")
 // monta o usuário completo juntando users, cities, user_types e (só para acolhidos) recipient_profiles
 const consultaUsuario = `
 SELECT u.id, u.name, u.email, u.password_hash, COALESCE(u.phone, ''), u.state, c.name, t.type,
-       COALESCE(rp.clothing_size, ''), COALESCE(rp.shoe_size, 0), rp.wanted_items
+       COALESCE(rp.clothing_size, ''), COALESCE(rp.shoe_size, 0), rp.wanted_items,
+       u.terms_accepted_at, u.terms_version
 FROM users u
 JOIN cities c ON c.id = u.city_id
 JOIN user_types t ON t.id = u.user_type_id
@@ -33,7 +34,8 @@ func escanearUsuario(s database.Scanner) (*models.Usuario, error) {
 	var u models.Usuario
 
 	err := s.Scan(&u.ID, &u.Nome, &u.Email, &u.Senha, &u.Telefone, &u.UF, &u.Cidade, &u.Tipo,
-		&u.TamanhoRoupa, &u.TamanhoCalcado, pq.Array(&u.RoupasProcuradas))
+		&u.TamanhoRoupa, &u.TamanhoCalcado, pq.Array(&u.RoupasProcuradas),
+		&u.AceiteTermosEm, &u.VersaoTermos)
 	if err != nil {
 		return nil, err
 	}
@@ -117,10 +119,10 @@ func (r *RepositorioPostgresUsuario) Criar(u *models.Usuario) (*models.Usuario, 
 	}
 
 	err = tx.QueryRow(
-		`INSERT INTO users (name, email, password_hash, phone, state, city_id, user_type_id)
-		 VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, $7)
+		`INSERT INTO users (name, email, password_hash, phone, state, city_id, user_type_id, terms_accepted_at, terms_version)
+		 VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, $7, $8, $9)
 		 RETURNING id`,
-		u.Nome, u.Email, u.Senha, u.Telefone, u.UF, cidadeID, tipoID,
+		u.Nome, u.Email, u.Senha, u.Telefone, u.UF, cidadeID, tipoID, u.AceiteTermosEm, u.VersaoTermos,
 	).Scan(&u.ID)
 	if err != nil {
 		return nil, traduzirErro(err)

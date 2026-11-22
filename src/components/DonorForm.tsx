@@ -1,12 +1,18 @@
+"use client"
+
 import { ArrowLeft, HeartHandshake } from "lucide-react"
 import Input from "./Input"
 import Link from "next/link"
+import { ErrorMessage } from "./Feedback"
+import { useSignup } from "@/lib/useSignup"
 
 type DonorFormProps = {
     onBack: () => void
 }
 
 export default function DonorForm({ onBack }: DonorFormProps) {
+    const { handleSubmit, enviando, erro } = useSignup("doador")
+
     return (
         <section className="mx-auto w-full max-w-2xl border border-seveste-sage/30 bg-seveste-white p-6 shadow-[0_24px_70px_rgba(23,63,53,0.12)] sm:p-10">
             <button
@@ -35,7 +41,7 @@ export default function DonorForm({ onBack }: DonorFormProps) {
                 </div>
             </div>
 
-            <form className="grid gap-5 sm:grid-cols-2">
+            <form onSubmit={handleSubmit} className="grid gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                     <Input
                         label="Nome completo *"
@@ -77,7 +83,11 @@ export default function DonorForm({ onBack }: DonorFormProps) {
                     type="text"
                     autoComplete="address-level1"
                     placeholder="UF"
+                    minLength={2}
                     maxLength={2}
+                    pattern="[A-Za-z]{2}"
+                    title="Informe a sigla do estado, ex.: SP"
+                    className="uppercase"
                     required
                 />
                 <div className="sm:col-span-2">
@@ -97,18 +107,27 @@ export default function DonorForm({ onBack }: DonorFormProps) {
                         required
                         className="mt-1 size-4 accent-seveste-green cursor-pointer"
                     />
-                    <Link
-                        className="underline hover:text-seveste-green"
-                        href="/privacy-policy">
-                        Li o aviso de privacidade e concordo com o uso dos meus dados para viabilizar as doações.
-                    </Link>
+                    <span>
+                        Li e aceito os{" "}
+                        <Link className="underline hover:text-seveste-green" href="/terms-of-use" target="_blank">Termos de Uso</Link>
+                        {" "}e a{" "}
+                        <Link className="underline hover:text-seveste-green" href="/privacy-policy" target="_blank">Política de Privacidade</Link>,
+                        e concordo com o uso dos meus dados para viabilizar as doações.
+                    </span>
                 </label>
+
+                {erro && (
+                    <div className="sm:col-span-2">
+                        <ErrorMessage mensagem={erro} />
+                    </div>
+                )}
 
                 <button
                     type="submit"
-                    className="mt-2 cursor-pointer border border-seveste-green bg-seveste-green px-6 py-3 font-semibold text-seveste-white shadow-sm transition duration-200 hover:-translate-y-px hover:border-seveste-dark hover:bg-seveste-dark hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-green sm:col-span-2"
+                    disabled={enviando}
+                    className="mt-2 cursor-pointer border border-seveste-green bg-seveste-green px-6 py-3 font-semibold text-seveste-white shadow-sm transition duration-200 hover:-translate-y-px hover:border-seveste-dark hover:bg-seveste-dark hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seveste-green disabled:cursor-wait disabled:opacity-60 sm:col-span-2"
                 >
-                    Continuar como doador
+                    {enviando ? "Criando sua conta..." : "Continuar como doador"}
                 </button>
             </form>
         </section>
